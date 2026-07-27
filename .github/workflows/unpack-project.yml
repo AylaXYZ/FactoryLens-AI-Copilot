@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - FactoryLens-AI-Copilot.zip
+      - .github/workflows/unpack-project.yml
 
 permissions:
   contents: write
