@@ -1,0 +1,18 @@
+[
+  {
+    "question": "E-OVHT-07 表示什么，应该先检查什么？",
+    "expected_source": "设备手册_伺服电机.md",
+    "expected_terms": ["温度", "风扇"]
+  },
+  {
+    "question": "设备维修工单必须包含哪些信息？",
+    "expected_source": "SOP_设备异常处理.md",
+    "expected_terms": ["根因", "验证"]
+  },
+  {
+    "question": "历史案例中联轴器不对中如何处理？",
+    "expected_source": "历史故障案例.csv",
+    "expected_terms": ["校正", "联轴器"]
+  }
+]
+
