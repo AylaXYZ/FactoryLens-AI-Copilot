@@ -1,7 +1,6 @@
 # FactoryLens AI Copilot｜制造业知识与设备运维智能体
 
 > 面向制造业现场的企业知识问答与设备运维智能体。  
-> 一个为 FDE（Forward Deployed Engineer）岗位准备的完整、可运行作品。
 
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB)
 ![LangGraph](https://img.shields.io/badge/LangGraph-Agent-1C3C3C)
@@ -14,8 +13,7 @@
 ## 项目要解决什么问题
 
 制造企业的设备手册、SOP 和历史故障案例通常散落在 PDF、Word、Excel 和员工经验中。
-出现故障时，现场人员需要跨文档搜索、向老师傅询问，再手工填写工单，处理效率和知识传承
-都很不稳定。
+出现故障时，现场人员需要跨文档搜索、向老师傅询问，再手工填写工单，处理效率和知识传承都很不稳定。
 
 FactoryLens 将这段流程做成一套可演示闭环：
 
@@ -244,7 +242,7 @@ FactoryLens-RAG-Copilot/
 
 ## 生产化还需要补什么
 
-这是作品集项目，不宣称已经在真实工厂上线。若进入生产环境，下一步包括：
+这是作品集项目，    若进入真实生产环境，下一步包括：
 
 - 使用企业 SSO、角色权限、文档 ACL 和审计日志；
 - 通过 OPC UA、MQTT 或厂商 API 接入真实 SCADA/MES；
