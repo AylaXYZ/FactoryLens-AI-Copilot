@@ -19,6 +19,7 @@ jobs:
         shell: bash
         run: |
           unzip -o FactoryLens-AI-Copilot.zip
+          git restore -- .github/workflows/test.yml
           rm -f FactoryLens-AI-Copilot.zip
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
