@@ -19,7 +19,6 @@ jobs:
         run: |
           unzip -o FactoryLens-AI-Copilot.zip
           rm -f FactoryLens-AI-Copilot.zip
-          rm -f .github/workflows/unpack-project.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
