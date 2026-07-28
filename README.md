@@ -1,6 +1,7 @@
 # FactoryLens AI Copilot｜制造业知识与设备运维智能体
 
 > 面向制造业现场的企业知识问答与设备运维智能体。  
+> 一个为 FDE（Forward Deployed Engineer）岗位准备的完整、可运行作品。
 
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB)
 ![LangGraph](https://img.shields.io/badge/LangGraph-Agent-1C3C3C)
@@ -13,7 +14,8 @@
 ## 项目要解决什么问题
 
 制造企业的设备手册、SOP 和历史故障案例通常散落在 PDF、Word、Excel 和员工经验中。
-出现故障时，现场人员需要跨文档搜索、向老师傅询问，再手工填写工单，处理效率和知识传承都很不稳定。
+出现故障时，现场人员需要跨文档搜索、向老师傅询问，再手工填写工单，处理效率和知识传承
+都很不稳定。
 
 FactoryLens 将这段流程做成一套可演示闭环：
 
@@ -242,7 +244,7 @@ FactoryLens-RAG-Copilot/
 
 ## 生产化还需要补什么
 
-这是作品集项目，    若进入真实生产环境，下一步包括：
+这是作品集项目，不宣称已经在真实工厂上线。若进入生产环境，下一步包括：
 
 - 使用企业 SSO、角色权限、文档 ACL 和审计日志；
 - 通过 OPC UA、MQTT 或厂商 API 接入真实 SCADA/MES；
@@ -250,13 +252,6 @@ FactoryLens-RAG-Copilot/
 - 使用更强的中文 Embeddings 与 reranker；
 - 建立人工审批、工单回写、失败重试和监控告警；
 - 用真实专家标注集评估召回率、忠实度和故障建议安全性。
-
-## 面试时可以如何介绍
-
-> 我没有把项目做成单纯聊天机器人，而是从 FDE 的落地视角设计了一个最小业务闭环：
-> 先解决企业文档接入和引用溯源，再把 RAG 嵌入一个确定性的设备异常工作流，最终输出
-> 可复核的维修工单。为了保证现场演示稳定，我做了无 Key 模式；同时保留 OpenAI 兼容接口、
-> Ollama 和 FastAPI，展示从 Demo 到企业集成的迁移路径。
 
 ## 许可
 
