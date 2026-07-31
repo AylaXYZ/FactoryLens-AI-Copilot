@@ -6,7 +6,7 @@ from langgraph.graph import END, START, StateGraph
 
 from factorylens.config import Settings, get_settings
 from factorylens.schemas import DiagnosisResult, SensorEvent, SourceChunk, WorkOrder
-from factorylens.vector_store import JsonVectorStore
+from factorylens.vector_store import JsonVectorStore, create_store
 
 
 class MaintenanceState(TypedDict, total=False):
@@ -28,7 +28,7 @@ class MaintenanceWorkflow:
         self, settings: Settings | None = None, store: JsonVectorStore | None = None
     ) -> None:
         self.settings = settings or get_settings()
-        self.store = store or JsonVectorStore(self.settings.index_path)
+        self.store = store or create_store(self.settings)
         self.graph = self._build_graph()
 
     @staticmethod
@@ -133,4 +133,3 @@ class MaintenanceWorkflow:
             work_order=result.get("work_order"),
             workflow_trace=result["trace"],
         )
-

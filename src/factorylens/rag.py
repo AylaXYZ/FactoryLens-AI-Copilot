@@ -3,7 +3,7 @@ from __future__ import annotations
 from factorylens.config import Settings, get_settings
 from factorylens.llm import TextGenerator, get_generator
 from factorylens.schemas import AskResponse
-from factorylens.vector_store import JsonVectorStore
+from factorylens.vector_store import JsonVectorStore, create_store
 
 
 class RAGService:
@@ -14,7 +14,7 @@ class RAGService:
         generator: TextGenerator | None = None,
     ) -> None:
         self.settings = settings or get_settings()
-        self.store = store or JsonVectorStore(self.settings.index_path)
+        self.store = store or create_store(self.settings)
         self.generator = generator or get_generator(self.settings)
 
     def ask(self, question: str, top_k: int | None = None) -> AskResponse:
@@ -27,4 +27,3 @@ class RAGService:
             grounded=grounded,
             provider=self.generator.provider_name,
         )
-

@@ -17,11 +17,11 @@ from factorylens.schemas import (
     ProductionReport,
     SensorEvent,
 )
-from factorylens.vector_store import JsonVectorStore
+from factorylens.vector_store import create_store
 from factorylens.workflow import MaintenanceWorkflow
 
 settings = get_settings()
-store = JsonVectorStore(settings.index_path)
+store = create_store(settings)
 rag = RAGService(settings=settings, store=store)
 workflow = MaintenanceWorkflow(settings=settings, store=store)
 
@@ -34,7 +34,12 @@ app = FastAPI(
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok", "documents": store.count, "provider": rag.generator.provider_name}
+    return {
+        "status": "ok",
+        "documents": store.count,
+        "llm_provider": rag.generator.provider_name,
+        "embedding_provider": store.embedding_provider_name,
+    }
 
 
 @app.post("/ask", response_model=AskResponse)

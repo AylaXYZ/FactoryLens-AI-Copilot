@@ -3,12 +3,22 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
+from typing import Protocol
 
 import numpy as np
 from langchain_core.documents import Document
 from sklearn.feature_extraction.text import HashingVectorizer
 
+from factorylens.config import Settings
 from factorylens.schemas import SourceChunk
+
+
+class EmbeddingProvider(Protocol):
+    provider_name: str
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]: ...
+
+    def embed_query(self, text: str) -> list[float]: ...
 
 
 class LocalHashEmbeddings:
@@ -19,6 +29,7 @@ class LocalHashEmbeddings:
     """
 
     def __init__(self, dimensions: int = 1024) -> None:
+        self.provider_name = "demo-hashing"
         self.vectorizer = HashingVectorizer(
             n_features=dimensions,
             alternate_sign=False,
@@ -35,14 +46,92 @@ class LocalHashEmbeddings:
         return self.embed_documents([text])[0]
 
 
+class OpenAIEmbeddingProvider:
+    provider_name: str
+
+    def __init__(self, settings: Settings) -> None:
+        if not settings.openai_api_key:
+            raise ValueError("OPENAI_API_KEY is required when EMBEDDING_PROVIDER=openai")
+        try:
+            from langchain_openai import OpenAIEmbeddings
+        except ImportError as exc:
+            raise RuntimeError("Install model dependencies with: pip install -e .[models]") from exc
+        self.provider_name = f"openai:{settings.openai_embedding_model}"
+        self.model = OpenAIEmbeddings(
+            model=settings.openai_embedding_model,
+            api_key=settings.openai_api_key,
+            base_url=settings.openai_base_url,
+        )
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return self.model.embed_documents(texts)
+
+    def embed_query(self, text: str) -> list[float]:
+        return self.model.embed_query(text)
+
+
+class OllamaEmbeddingProvider:
+    provider_name: str
+
+    def __init__(self, settings: Settings) -> None:
+        try:
+            from langchain_ollama import OllamaEmbeddings
+        except ImportError as exc:
+            raise RuntimeError("Install model dependencies with: pip install -e .[models]") from exc
+        self.provider_name = f"ollama:{settings.ollama_embedding_model}"
+        self.model = OllamaEmbeddings(
+            model=settings.ollama_embedding_model,
+            base_url=settings.ollama_base_url,
+        )
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return self.model.embed_documents(texts)
+
+    def embed_query(self, text: str) -> list[float]:
+        return self.model.embed_query(text)
+
+
+class BgeEmbeddingProvider:
+    provider_name: str
+
+    def __init__(self, settings: Settings) -> None:
+        try:
+            from sentence_transformers import SentenceTransformer
+        except ImportError as exc:
+            raise RuntimeError("Install local semantic embeddings with: pip install -e .[semantic]") from exc
+        self.provider_name = f"bge:{settings.bge_embedding_model}"
+        self.model = SentenceTransformer(settings.bge_embedding_model)
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        vectors = self.model.encode(texts, normalize_embeddings=True)
+        return np.asarray(vectors, dtype=float).tolist()
+
+    def embed_query(self, text: str) -> list[float]:
+        return self.embed_documents([text])[0]
+
+
+def get_embeddings(settings: Settings) -> EmbeddingProvider:
+    if settings.embedding_provider == "openai":
+        return OpenAIEmbeddingProvider(settings)
+    if settings.embedding_provider == "ollama":
+        return OllamaEmbeddingProvider(settings)
+    if settings.embedding_provider == "bge":
+        return BgeEmbeddingProvider(settings)
+    return LocalHashEmbeddings()
+
+
 class JsonVectorStore:
     """Small persistent vector store designed for transparent local demos."""
 
-    def __init__(self, path: str | Path, embeddings: LocalHashEmbeddings | None = None) -> None:
+    def __init__(self, path: str | Path, embeddings: EmbeddingProvider | None = None) -> None:
         self.path = Path(path)
         self.embeddings = embeddings or LocalHashEmbeddings()
         self._records: list[dict] = []
         self._load()
+
+    @property
+    def embedding_provider_name(self) -> str:
+        return self.embeddings.provider_name
 
     @property
     def count(self) -> int:
@@ -120,3 +209,6 @@ class JsonVectorStore:
         self._records = []
         self._save()
 
+
+def create_store(settings: Settings) -> JsonVectorStore:
+    return JsonVectorStore(settings.index_path, embeddings=get_embeddings(settings))

@@ -6,12 +6,12 @@ from pathlib import Path
 from factorylens.config import get_settings
 from factorylens.ingestion import load_and_chunk
 from factorylens.rag import RAGService
-from factorylens.vector_store import JsonVectorStore
+from factorylens.vector_store import create_store
 
 
 def evaluate(root: Path) -> dict:
     settings = get_settings()
-    store = JsonVectorStore(settings.index_path)
+    store = create_store(settings)
     if not store.count:
         store.add_documents(load_and_chunk((root / "knowledge_base").glob("*")))
     service = RAGService(settings=settings, store=store)
@@ -46,4 +46,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
