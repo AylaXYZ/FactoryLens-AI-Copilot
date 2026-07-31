@@ -1,13 +1,14 @@
-# FactoryLens AI Copilot｜制造业知识与设备运维智能体
+# FactoryLens Semantic RAG Agent｜制造业语义知识与运维智能体
 
-> 面向制造业现场的企业知识问答与设备运维智能体。  
-> 一个为 FDE（Forward Deployed Engineer）岗位准备的完整、可运行作品。
+> 面向制造业现场的真实语义检索、企业知识问答与设备运维智能体。
+> 支持离线演示、OpenAI、Ollama 与本地 BGE Embedding，可完整观察从文档切片到答案生成的 RAG 链路。
 
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB)
 ![LangGraph](https://img.shields.io/badge/LangGraph-Agent-1C3C3C)
 ![FastAPI](https://img.shields.io/badge/FastAPI-API-009688)
 ![Streamlit](https://img.shields.io/badge/Streamlit-Demo-FF4B4B)
 ![Tests](https://img.shields.io/badge/tests-pytest-brightgreen)
+![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-blue)
 
 ![FactoryLens 首页](docs/factorylens-home.png)
 
@@ -37,7 +38,9 @@ FastAPI 对接 MES / SCADA / ERP
 ## 核心功能
 
 - **多格式知识接入**：PDF、Word、Excel、CSV、Markdown 和 TXT。
-- **可追溯 RAG**：回答附带文档名、页码/工作表和检索得分；无依据时拒绝编造。
+- **真实语义 RAG**：可切换 OpenAI、Ollama 或本地 BGE Embedding；离线模式保留零依赖 Hashing 检索。
+- **透明检索链路**：界面展示 Top-K、相似度、切片 ID、来源位置和进入 Prompt 的完整上下文。
+- **可追溯回答**：回答附带文档名、页码/工作表和检索得分；无依据时拒绝编造。
 - **设备运维 Agent**：LangGraph 编排“异常检测 → 知识检索 → 根因分析 → 工单生成”。
 - **生产日报**：读取模拟 MES 数据，计算计划达成率、停机和报警，自动给出风险与动作。
 - **企业集成接口**：FastAPI 提供 `/ask`、`/diagnose`、`/reports/production` 等接口。
@@ -92,7 +95,7 @@ flowchart LR
 
 ```powershell
 git clone <你的仓库地址>
-cd FactoryLens-RAG-Copilot
+cd FactoryLens-Semantic-RAG-Agent
 .\start.ps1
 ```
 
@@ -126,7 +129,7 @@ Swagger 文档：
 http://127.0.0.1:8000/docs
 ```
 
-## 模型配置
+## 模型与向量配置
 
 复制环境变量模板：
 
@@ -138,28 +141,51 @@ Copy-Item .env.example .env
 
 ```env
 LLM_PROVIDER=demo
+EMBEDDING_PROVIDER=demo
 ```
 
-该模式执行真实检索，并用确定性模板组织带引用答案，适合本地演示和自动化测试。
+该模式使用本地字符 Hashing 向量执行确定性检索，并用模板组织带引用答案，适合无网络演示和自动化测试。
 
 ### 2. OpenAI 兼容接口
 
 ```env
 LLM_PROVIDER=openai
+EMBEDDING_PROVIDER=openai
 OPENAI_API_KEY=your-key
 OPENAI_BASE_URL=https://api.openai.com/v1
 OPENAI_MODEL=gpt-4.1-mini
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 ```
 
-`OPENAI_BASE_URL` 可替换为其他兼容服务地址。
+生成与 Embedding 可以分别配置；`OPENAI_BASE_URL` 可替换为其他兼容服务地址。
 
 ### 3. 本地 Ollama
 
 ```env
 LLM_PROVIDER=ollama
+EMBEDDING_PROVIDER=ollama
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=qwen2.5:7b
+OLLAMA_EMBEDDING_MODEL=bge-m3
 ```
+
+### 4. 本地 BGE 语义向量
+
+先安装可选依赖：
+
+```powershell
+pip install -e ".[semantic]"
+```
+
+再配置：
+
+```env
+LLM_PROVIDER=demo
+EMBEDDING_PROVIDER=bge
+BGE_EMBEDDING_MODEL=BAAI/bge-small-zh-v1.5
+```
+
+首次运行会下载模型；之后可在本地完成中文语义检索。也可以将 `LLM_PROVIDER` 改为 `openai` 或 `ollama`，实现真实语义检索与大模型生成的组合。
 
 ## API 示例
 
@@ -197,8 +223,7 @@ curl -X POST http://127.0.0.1:8000/diagnose \
 解析 → 清洗 → 递归分块 → 内容哈希去重 → 向量化 → 持久化
 ```
 
-当前离线演示使用字符级 Hashing 向量，优点是零下载、确定性和中文可用。生产环境可将
-`LocalHashEmbeddings` 替换为企业选定的 OpenAI、BGE 或 Ollama Embeddings，业务层无需修改。
+向量层采用统一接口：离线模式使用字符级 Hashing 向量，真实语义模式可选择 OpenAI、BGE 或 Ollama Embeddings。不同模型使用独立索引文件，切换模型不会复用维度不兼容的旧向量。
 
 ## 测试与 RAG 评测
 
@@ -216,7 +241,7 @@ factorylens-eval
 ## 目录结构
 
 ```text
-FactoryLens-RAG-Copilot/
+FactoryLens-Semantic-RAG-Agent/
 ├─ app.py                         # Streamlit 演示界面
 ├─ src/factorylens/
 │  ├─ ingestion.py               # PDF/Word/Excel 文档管道
@@ -255,4 +280,4 @@ FactoryLens-RAG-Copilot/
 
 ## 许可
 
-[MIT](LICENSE)
+本项目采用 [PolyForm Noncommercial 1.0.0](LICENSE) 公开源码，仅允许个人学习、研究、实验及其他非商业用途；**不允许商业使用**。复制、修改或分发时必须同时保留许可证及 [NOTICE](NOTICE) 中以 `Required Notice:` 开头的署名信息。商业授权需另行取得作者书面许可。

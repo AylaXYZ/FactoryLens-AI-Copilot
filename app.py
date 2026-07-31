@@ -13,14 +13,15 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from factorylens.config import get_settings
 from factorylens.ingestion import SUPPORTED_EXTENSIONS, load_and_chunk
+from factorylens.llm import build_context
 from factorylens.rag import RAGService
 from factorylens.reporting import build_production_report
 from factorylens.schemas import ProductionRecord, SensorEvent
-from factorylens.vector_store import JsonVectorStore
+from factorylens.vector_store import create_store
 from factorylens.workflow import MaintenanceWorkflow
 
 st.set_page_config(
-    page_title="FactoryLens · 制造业 AI Copilot",
+    page_title="FactoryLens Semantic RAG Agent",
     page_icon="◈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -56,7 +57,7 @@ st.markdown(
 @st.cache_resource
 def services():
     settings = get_settings()
-    store = JsonVectorStore(settings.index_path)
+    store = create_store(settings)
     rag = RAGService(settings=settings, store=store)
     workflow = MaintenanceWorkflow(settings=settings, store=store)
     return settings, store, rag, workflow
@@ -77,7 +78,7 @@ ingest_demo_if_needed()
 
 with st.sidebar:
     st.markdown("## ◈ FactoryLens")
-    st.caption("制造业知识与设备运维智能体")
+    st.caption("语义 RAG 与设备运维智能体")
     page = st.radio(
         "工作台",
         ["知识问答", "故障诊断 Agent", "生产日报", "知识库管理", "架构与接口"],
@@ -87,13 +88,14 @@ with st.sidebar:
     st.caption("运行状态")
     st.write(f"**{store.count}** 个知识切片")
     st.write(f"模型：`{rag.generator.provider_name}`")
+    st.write(f"向量：`{store.embedding_provider_name}`")
     st.success("本地演示模式可用")
     st.caption("AI 结论仅供辅助，设备处置需人工复核。")
 
 st.markdown(
     """
     <section class="hero">
-      <div class="eyebrow">FDE PORTFOLIO · RAG + AGENT</div>
+      <div class="eyebrow">SEMANTIC RAG · LANGGRAPH · FASTAPI</div>
       <h1>让设备知识可检索，<br/>让异常处理可闭环。</h1>
       <p>从企业文档接入、证据检索，到根因分析与维修工单生成。一套可在本地运行、
       可通过 API 集成 MES / SCADA / ERP 的制造业 AI Copilot。</p>
@@ -137,6 +139,23 @@ if page == "知识问答":
                 f"相似度 {source.score:.2f}<br><span>{source.content[:300]}</span></div>",
                 unsafe_allow_html=True,
             )
+        with st.expander("查看 RAG 检索与 Prompt 上下文"):
+            st.caption(
+                "查询先经过向量化，再按相似度召回 Top-K 切片；以下内容会作为上下文交给生成模型。"
+            )
+            rows = [
+                {
+                    "排名": index,
+                    "来源": source.source,
+                    "位置": f"第 {source.page} 页" if source.page else source.sheet or "文档",
+                    "相似度": source.score,
+                    "切片 ID": source.chunk_id,
+                    "内容预览": source.content[:160],
+                }
+                for index, source in enumerate(result.sources, start=1)
+            ]
+            st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+            st.code(build_context(result.sources), language="text")
 
 elif page == "故障诊断 Agent":
     st.subheader("设备异常 → 根因 → 工单")
@@ -188,7 +207,7 @@ elif page == "生产日报":
     uploaded = st.file_uploader("上传生产数据", type=["csv"])
     sample_path = ROOT / "data" / "sample_production.csv"
     frame = pd.read_csv(uploaded if uploaded else sample_path)
-    st.dataframe(frame, use_container_width=True, hide_index=True)
+    st.dataframe(frame, width="stretch", hide_index=True)
     if st.button("生成日报", type="primary"):
         records = [ProductionRecord(**row) for row in frame.to_dict(orient="records")]
         report = build_production_report(records)

@@ -5,7 +5,7 @@ Set-Location $ProjectRoot
 if (-not (Test-Path ".venv")) {
     py -3 -m venv .venv
     & ".\.venv\Scripts\python.exe" -m pip install -e ".[models,dev]"
-} elseif (-not (& ".\.venv\Scripts\python.exe" -m pip show factorylens-rag-copilot 2>$null)) {
+} elseif (-not (& ".\.venv\Scripts\python.exe" -m pip show factorylens-semantic-rag-agent 2>$null)) {
     & ".\.venv\Scripts\python.exe" -m pip install -e ".[models,dev]"
 }
 
